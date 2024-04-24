@@ -1,4 +1,4 @@
-CC = gcc
+CC = clang
 CFLAGS = -Wall -Wextra -Iinclude -std=c17
 SRC_DIR = src
 INC_DIR = include
@@ -8,6 +8,9 @@ SRCS = $(wildcard $(SRC_DIR)/*.c)
 OBJS = $(SRCS:$(SRC_DIR)/%.c=$(BIN_DIR)/%.o)
 
 all: my_program
+
+run: my_program
+	./my_program
 
 my_program: $(OBJS) 
 	$(CC) $(CFLAGS) -o $@ $^

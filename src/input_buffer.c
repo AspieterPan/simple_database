@@ -1,5 +1,4 @@
 #include "../include/input_buffer.h"
-#include <stdlib.h>
 
 InputBuffer *new_input_buffer() {
   InputBuffer *input_buffer = (InputBuffer *)malloc(sizeof(InputBuffer));

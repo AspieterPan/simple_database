@@ -2,6 +2,7 @@
 #define INPUT_BUFFER_H
 
 #include <stddef.h>
+#include <stdlib.h>
 #include <sys/types.h>
 
 typedef struct {
