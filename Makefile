@@ -12,6 +12,10 @@ all: my_program
 run: my_program
 	./my_program
 
+.PHONY: test
+test:
+	python3 ./test/test.py
+
 my_program: $(OBJS) 
 	$(CC) $(CFLAGS) -o $@ $^
 
