@@ -2,6 +2,10 @@
 #define SIMPLE_DATABASE_STORE_H
 
 #include <string.h>
+#include <sys/errno.h>
+#include <unistd.h>
+#include <printf.h>
+#include <sys/file.h>
 #include <stdlib.h>
 #include <sys/types.h>
 
@@ -31,18 +35,26 @@ extern const uint32_t ROWS_PER_PAGE;
 extern const uint32_t TABLE_MAX_ROWS;
 
 typedef struct {
-    uint32_t num_rows;
+    int file_descriptor;
+    uint32_t file_length;
     void *pages[TABLE_MAX_PAGES];
+} Pager;
+
+typedef struct {
+    uint32_t num_rows;
+    Pager *pager;
 } Table;
 
-void serialize_row(Row *source, void *destination);
+void serialize_row(const Row *source, void *destination);
 
-void deserialize_row(void *source, Row *destination);
+void deserialize_row(const void *source, Row *destination);
 
-void *row_slot(Table *table, uint32_t row_num);
+void *row_slot(const Table *table, uint32_t row_num);
 
-Table *new_table();
+Pager *pager_open(const char *filename);
 
-void free_table(Table *table);
+Table *db_open(const char *filename);
+
+void db_close(Table *table);
 
 #endif

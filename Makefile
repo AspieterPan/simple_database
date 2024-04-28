@@ -1,5 +1,5 @@
 CC = clang
-CFLAGS = -Wall -Wextra -Iinclude -std=c17
+CFLAGS = -Wall -Wextra -Iinclude -std=c17 -g
 SRC_DIR = src
 INC_DIR = include
 BIN_DIR = bin
@@ -10,11 +10,11 @@ OBJS = $(SRCS:$(SRC_DIR)/%.c=$(BIN_DIR)/%.o)
 all: my_program
 
 run: my_program
-	./my_program
+	./my_program ./db/test.db
 
 .PHONY: test
 test:
-	python3 ./test/test.py
+	python3 ./py/test.py
 
 my_program: $(OBJS) 
 	$(CC) $(CFLAGS) -o $@ $^

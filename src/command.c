@@ -2,15 +2,16 @@
 
 void print_row(Row *row);
 
-MetaCommandResult do_meta_command(InputBuffer *input_buffer) {
+MetaCommandResult do_meta_command(const InputBuffer *input_buffer, Table *table) {
     if (strcmp(input_buffer->buffer, ".exit") == 0) {
+        db_close(table);
         exit(EXIT_SUCCESS);
     } else {
         return META_COMMAND_UNRECOGNIZED_COMMAND;
     }
 }
 
-PrepareResult prepare_insert(InputBuffer *input_buffer, Statement *statement) {
+PrepareResult prepare_insert(const InputBuffer *input_buffer, Statement *statement) {
     statement->type = STATEMENT_INSERT;
     char *keyword = strtok(input_buffer->buffer, " ");
     char *id_string = strtok(NULL, " ");
@@ -58,7 +59,7 @@ PrepareResult prepare_statement(InputBuffer *input_buffer,
 }
 
 ExecuteResult execute_insert(Statement *statement, Table *table) {
-    if (table->num_rows >= TABLE_MAX_PAGES) {
+    if (table->num_rows >= TABLE_MAX_ROWS) {
         return EXECUTE_TABLE_FULL;
     }
 
