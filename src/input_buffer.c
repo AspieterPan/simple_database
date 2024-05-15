@@ -1,4 +1,4 @@
-#include "../include/input_buffer.h"
+#include "../inc/input_buffer.h"
 
 void close_input_buffer(InputBuffer *input_buffer);
 

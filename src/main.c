@@ -1,4 +1,4 @@
-#include "../include/command.h"
+#include "../inc/command.h"
 
 void print_prompt() { printf("\ndb > "); }
 

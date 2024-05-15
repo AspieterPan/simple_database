@@ -7,8 +7,8 @@
 #include <stdbool.h>
 #include <assert.h>
 
-#include "../include/input_buffer.h"
-#include "../include/store.h"
+#include "../inc/input_buffer.h"
+#include "../inc/store.h"
 
 typedef enum {
     META_COMMAND_SUCCESS,
@@ -39,7 +39,7 @@ PrepareResult prepare_statement(InputBuffer *input_buffer,
 
 ExecuteResult execute_insert(Statement *statement, Table *table);
 
-ExecuteResult execute_select(Statement *statement, Table *table);
+ExecuteResult execute_select(const Statement *statement, Table *table);
 
 
 ExecuteResult execute_statement(Statement *statement, Table *table);

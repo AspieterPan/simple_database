@@ -15,7 +15,7 @@ def log_func(f: Callable) -> Callable:
     return wrapper
 
 
-def db_manager(f: Callable) -> Callable:
+def db_context_manage(f: Callable) -> Callable:
     """ 用于修饰数据库测试函数的装饰器
 
     开始测试前， 清除旧的文件
@@ -49,7 +49,7 @@ def run_sql_commands(dbname: str, commands: List[str]) -> List[str]:
 
 
 @log_func
-@db_manager
+@db_context_manage
 def test_database_operations(dbname: str):
     """ 测试数据库操作 """
     commands = [
@@ -76,7 +76,7 @@ def test_database_operations(dbname: str):
 
 
 @log_func
-@db_manager
+@db_context_manage
 def test_database_pressure(dbname):
     commands = [f"insert {i} user{i} user#{i}@email.com" for i in range(1441)]
     commands.append(".exit")
@@ -88,7 +88,7 @@ def test_database_pressure(dbname):
 
 
 @log_func
-@db_manager
+@db_context_manage
 def test_database_long_string(dbname):
     name = "a" * 32
     email = "e" * 255
@@ -106,7 +106,7 @@ def test_database_long_string(dbname):
 
 
 @log_func
-@db_manager
+@db_context_manage
 def test_database_too_long_string(dbname):
     name = "a" * 33
     email = "e" * 256
@@ -121,7 +121,7 @@ def test_database_too_long_string(dbname):
 
 
 @log_func
-@db_manager
+@db_context_manage
 def test_database_persistence(dbname):
     """测试数据库存储功能"""
     # insert datas and store db
@@ -141,6 +141,7 @@ def test_database_persistence(dbname):
 
 
 @log_func
+@db_context_manage
 def test_database_persistence_pressure(dbname):
     """数据库存储功能压力测试"""
     commands = [f"insert {i} user{i} email{i}" for i in range(999)]
@@ -151,11 +152,37 @@ def test_database_persistence_pressure(dbname):
     print(output[-50:])
 
 
+@log_func
+@db_context_manage
+def test_print_constants(dbname):
+    """打印所有的常数值"""
+    commands = [".constants", ".exit"]
+    output = run_sql_commands(dbname, commands)
+    print(output)
+    expect = ['db > Constants:', 'ROW_SIZE: 293', 'COMMON_NODE_HEADER_SIZE: 6', 'LEAF_NODE_HEADER_SIZE: 10',
+              'LEAF_NODE_CELL_SIZE: 297', 'LEAF_NODE_SPACE_FOR_CELLS: 4086', 'LEAF_NODE_MAX_CELLS: 13', 'db >']
+    assert output == expect
+
+
+@log_func
+@db_context_manage
+def test_print_structure_of_one_node_btree(dbname):
+    commands = [f"insert {i} user#{i} person#{i}@example.com" for i in [3, 1, 2]]
+    commands.append(".btree")
+    commands.append(".exit")
+    output = run_sql_commands(dbname, commands)
+    print(output)
+
+
 if __name__ == "__main__":
     file_name = "./db/test.db"
+    if os.path.exists(file_name):
+        os.remove(file_name)
     test_database_operations(file_name)
     test_database_pressure(file_name)
     test_database_long_string(file_name)
     test_database_too_long_string(file_name)
     test_database_persistence(file_name)
     test_database_persistence_pressure(file_name)
+    test_print_constants(file_name)
+    test_print_structure_of_one_node_btree(file_name)
