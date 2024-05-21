@@ -167,8 +167,9 @@ def test_print_constants(dbname):
 @log_func
 @db_context_manage
 def test_print_structure_of_one_node_btree(dbname):
-    commands = [f"insert {i} user#{i} person#{i}@example.com" for i in [3, 1, 2]]
+    commands = [f"insert {i} user#{i} person#{i}@example.com" for i in range(14)]
     commands.append(".btree")
+    commands.append("insert 15 user15 person15@example.com")
     commands.append(".exit")
     output = run_sql_commands(dbname, commands)
     print(output)
@@ -176,13 +177,11 @@ def test_print_structure_of_one_node_btree(dbname):
 
 if __name__ == "__main__":
     file_name = "./db/test.db"
-    if os.path.exists(file_name):
-        os.remove(file_name)
-    test_database_operations(file_name)
-    test_database_pressure(file_name)
-    test_database_long_string(file_name)
-    test_database_too_long_string(file_name)
-    test_database_persistence(file_name)
-    test_database_persistence_pressure(file_name)
-    test_print_constants(file_name)
+    # test_database_operations(file_name)
+    # test_database_pressure(file_name)
+    # test_database_long_string(file_name)
+    # test_database_too_long_string(file_name)
+    # test_database_persistence(file_name)
+    # test_database_persistence_pressure(file_name)
+    # test_print_constants(file_name)
     test_print_structure_of_one_node_btree(file_name)

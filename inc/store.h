@@ -22,8 +22,6 @@ typedef struct {
     char email[COLUMN_EMAIL_SIZE + 1];
 } Row;
 
-#define TABLE_MAX_PAGES 100
-
 /*
  * Row Layout
  */
@@ -40,12 +38,6 @@ extern const uint32_t ROW_SIZE;
  */
 extern const uint32_t PAGE_SIZE;
 #define TABLE_MAX_PAGES 100
-
-
-typedef enum {
-    NODE_LEAF,
-    NODE_INTERNAL
-} NodeType;
 
 /*
  * Common Node Header Layout
@@ -69,12 +61,34 @@ extern const uint32_t LEAF_NODE_HEADER_SIZE;
  * Leaf Node Body Layout
  */
 extern const uint32_t LEAF_NODE_KEY_SIZE;
-extern const uint32_t LEAF_NODE_KEY_OFFSET;
 extern const uint32_t LEAF_NODE_VALUE_SIZE;
-extern const uint32_t LEAF_NODE_VALUE_OFFSET;
 extern const uint32_t LEAF_NODE_CELL_SIZE;
 extern const uint32_t LEAF_NODE_SPACE_FOR_CELLS;
 extern const uint32_t LEAF_NODE_MAX_CELLS;
+
+extern const uint32_t LEAF_NODE_RIGHT_SPLIT_COUNT;
+extern const uint32_t LEAF_NODE_LEFT_SPLIT_COUNT;
+
+/*
+ * Internal Node Header Layout
+ */
+extern const uint32_t INTERNAL_NODE_NUM_KEYS_SIZE;
+extern const uint32_t INTERNAL_NODE_NUM_KEYS_OFFSET;
+extern const uint32_t INTERNAL_NODE_RIGHT_CHILD_SIZE;
+extern const uint32_t INTERNAL_NODE_RIGHT_CHILD_OFFSET;
+extern const uint32_t INTERNAL_NODE_HEADER_SIZE;
+
+/*
+ * Internal Node Body Layout
+ */
+extern const uint32_t INTERNAL_NODE_KEY_SIZE;
+extern const uint32_t INTERNAL_NODE_CHILD_SIZE;
+extern const uint32_t INTERNAL_NODE_CELL_SIZE;
+
+typedef enum {
+    NODE_LEAF,
+    NODE_INTERNAL
+} NodeType;
 
 typedef struct {
     int file_descriptor;
@@ -95,17 +109,10 @@ typedef struct {
     bool end_of_table; // Indicates a position one past the last element
 } Cursor;
 
-void serialize_row(const Row *source, void *destination);
-
-void deserialize_row(const void *source, Row *destination);
-
-void *cursor_value(Cursor *cursor);
 
 Pager *pager_open(const char *filename);
 
 Table *db_open(const char *filename);
-
-void db_close(Table *table);
 
 /**
  *
@@ -114,13 +121,28 @@ void db_close(Table *table);
  */
 Cursor *table_start(Table *table);
 
-/**
- * @brief return a Cursor pointing to the end of table
- *
- * @param table Table*
- * @return a Cursor pointing to the end of table
- */
-Cursor *table_end(Table *table);
+Cursor *table_find(Table *table, uint32_t key);
+
+NodeType get_node_type(void *node);
+
+uint32_t *internal_node_num_keys(void *node);
+
+uint32_t *internal_node_cell(void *node, uint32_t cell_num);
+
+uint32_t *internal_node_key(void *node, uint32_t key_num);
+
+uint32_t * internal_node_right_child(void *node);
+
+uint32_t *leaf_node_key(void *node, uint32_t cell_num);
+
+uint32_t *leaf_node_num_cells(void *node);
+
+void *cursor_value(Cursor *cursor);
+
+// 返回第 page_num 页的起始位置的指针
+void *get_page(Pager *pager, uint32_t page_num);
+
+void *leaf_node_value(void *node, uint32_t cell_num);
 
 /**
  * @brief cursor advances by one step
@@ -129,15 +151,13 @@ Cursor *table_end(Table *table);
  */
 void cursor_advance(Cursor *cursor);
 
-// 返回第 page_num 页的起始位置的指针
-void *get_page(Pager *pager, uint32_t page_num);
+void db_close(Table *table);
 
-uint32_t *get_leaf_node_num_cells(void *node);
+void deserialize_row(const void *source, Row *destination);
 
-void *get_leaf_node_value(void *node, uint32_t cell_num);
+void leaf_node_insert(const Cursor *cursor, uint32_t key, const Row *value);
 
-uint32_t *get_leaf_node_key(void *node, uint32_t cell_num);
+void serialize_row(const Row *source, void *destination);
 
-void leaf_node_insert(Cursor *cursor, uint32_t key, Row *value);
 
 #endif

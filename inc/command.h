@@ -29,7 +29,7 @@ typedef enum {
 } PrepareResult;
 
 typedef enum {
-    EXECUTE_TABLE_FULL, EXECUTE_SUCCESS,
+    EXECUTE_TABLE_FULL, EXECUTE_SUCCESS, EXECUTE_DUPLICATE_KEY,
 } ExecuteResult;
 
 MetaCommandResult do_meta_command(const InputBuffer *input_buffer, Table *table);
@@ -37,11 +37,12 @@ MetaCommandResult do_meta_command(const InputBuffer *input_buffer, Table *table)
 PrepareResult prepare_statement(InputBuffer *input_buffer,
                                 Statement *statement);
 
-ExecuteResult execute_insert(Statement *statement, Table *table);
+ExecuteResult execute_insert(const Statement *statement, Table *table);
 
 ExecuteResult execute_select(const Statement *statement, Table *table);
 
-
 ExecuteResult execute_statement(Statement *statement, Table *table);
+
+void print_row(Row *row);
 
 #endif

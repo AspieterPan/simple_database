@@ -1,8 +1,9 @@
 #include "../inc/command.h"
 
-void print_row(Row *row);
 
-void print_leaf_node(void *node);
+void indent(uint32_t level);
+
+void print_tree(Pager *pager, uint32_t page_num, uint32_t indentation_level);
 
 void print_constants() {
     printf("ROW_SIZE: %d\n", ROW_SIZE);
@@ -13,12 +14,40 @@ void print_constants() {
     printf("LEAF_NODE_MAX_CELLS: %d\n", LEAF_NODE_MAX_CELLS);
 }
 
-void print_leaf_node(void *node) {
-    uint32_t num_cells = *get_leaf_node_num_cells(node);
-    printf("leaf (size %d)\n", num_cells);
-    for (uint32_t i = 0; i < num_cells; i++) {
-        uint32_t key = *get_leaf_node_key(node, i);
-        printf("  - %d : %d\n", i, key);
+void indent(uint32_t level) {
+    for (uint32_t i = 0; i < level; i++) {
+        printf("  ");
+    }
+}
+
+void print_tree(Pager *pager, uint32_t page_num, uint32_t indentation_level) {
+    void *node = get_page(pager, page_num);
+    uint32_t num_keys, child;
+
+    switch (get_node_type(node)) {
+        case NODE_LEAF:
+            num_keys = *leaf_node_num_cells(node);
+            indent(indentation_level);
+            printf("- leaf (size %d)\n", num_keys);
+            for (uint32_t i = 0; i < num_keys; i++) {
+                indent(indentation_level + 1);
+                printf("- %d\n", *leaf_node_key(node, i));
+            }
+            break;
+        case NODE_INTERNAL:
+            // todo
+            num_keys = *internal_node_num_keys(node);
+            indent(indentation_level);
+            printf("- internal (size %d)\n", num_keys);
+            for (uint32_t i = 0; i < num_keys; i++) {
+                child = *internal_node_cell(node, i);
+                print_tree(pager, child, indentation_level + 1);
+                indent(indentation_level + 1);
+                printf("- key %d\n", *internal_node_key(node, i));
+            }
+            child = *internal_node_right_child(node);
+            print_tree(pager, child, indentation_level + 1);
+            break;
     }
 }
 
@@ -32,7 +61,7 @@ MetaCommandResult do_meta_command(const InputBuffer *input_buffer, Table *table)
         return META_COMMAND_SUCCESS;
     } else if (strcmp(input_buffer->buffer, ".btree") == 0) {
         printf("Tree:\n");
-        print_leaf_node(get_page(table->pager, 0));
+        print_tree(table->pager, 0, 0);
         return META_COMMAND_SUCCESS;
     } else {
         return META_COMMAND_UNRECOGNIZED_COMMAND;
@@ -86,14 +115,20 @@ PrepareResult prepare_statement(InputBuffer *input_buffer, Statement *statement)
     return PREPARE_UNRECOGNIZED_STATEMENT;
 }
 
-ExecuteResult execute_insert(Statement *statement, Table *table) {
+ExecuteResult execute_insert(const Statement *statement, Table *table) {
     void *node = get_page(table->pager, table->root_page_num);
-    if (*get_leaf_node_num_cells(node) >= LEAF_NODE_MAX_CELLS) {
-        return EXECUTE_TABLE_FULL;
-    }
+    uint32_t num_cells = *leaf_node_num_cells(node);
 
-    Row *row_to_insert = &(statement->row_to_insert);
-    Cursor *cursor = table_end(table);
+    const Row *row_to_insert = &(statement->row_to_insert);
+    const uint32_t key_to_insert = row_to_insert->id;
+    const Cursor *cursor = table_find(table, key_to_insert);
+
+    if (cursor->cell_num < num_cells) {
+        const uint32_t key_at_index = *leaf_node_key(node, cursor->cell_num);
+        if (key_at_index == key_to_insert) {
+            return EXECUTE_DUPLICATE_KEY;
+        }
+    }
 
     leaf_node_insert(cursor, row_to_insert->id, row_to_insert);
 

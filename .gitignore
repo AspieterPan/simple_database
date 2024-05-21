@@ -6,3 +6,4 @@ my_program
 /py/script.py
 .pytest_cache
 db
+db_dump

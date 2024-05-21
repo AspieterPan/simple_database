@@ -1,8 +1,9 @@
 CC = clang
-CFLAGS = -Wall -Wextra -Iinc -std=c17 -g
 SRC_DIR = src
-INC_DIR = include
+INC_DIR = inc
 BIN_DIR = bin
+DB_DIR = db
+CFLAGS = -Wall -Wextra -I$(INC_DIR) -std=c17 -g
 
 SRCS = $(wildcard $(SRC_DIR)/*.c)
 OBJS = $(SRCS:$(SRC_DIR)/%.c=$(BIN_DIR)/%.o)
@@ -22,5 +23,10 @@ my_program: $(OBJS)
 $(BIN_DIR)/%.o: $(SRC_DIR)/%.c 
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-clean: 
-	rm -f $(BIN_DIR)/*.o my_program
+.PHONY: cleandb
+cleandb:
+	rm -f $(DB_DIR)/*
+
+.PHONY: clean
+clean:
+	rm -f $(BIN_DIR)/*.o my_program $(DB_DIR)/*
