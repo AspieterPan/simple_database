@@ -7,3 +7,5 @@ my_program
 .pytest_cache
 db
 db_dump
+/py/makedb.py
+.nvim
