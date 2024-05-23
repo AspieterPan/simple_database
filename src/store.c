@@ -4,7 +4,6 @@ Cursor *leaf_node_find(Table *table, uint32_t page_num, uint32_t key);
 
 uint32_t *internal_node_child(void *node, uint32_t child_num);
 
-
 void *leaf_node_cell(void *node, uint32_t cell_num);
 
 void initialize_internal_node(void *node);
@@ -139,10 +138,10 @@ void *get_page(Pager *pager, uint32_t page_num) {
 }
 
 Pager *pager_open(const char *filename) {
-    const int fd = open(filename, O_RDWR |      // Read/Write mode
-                                  +O_CREAT, // Create file if it does not exist
-                        +S_IWUSR |    // User write permission
-                        +S_IRUSR  // User read permission
+    const int fd = open(filename, O_RDWR |         // Read/Write mode
+                                          +O_CREAT,// Create file if it does not exist
+                        +S_IWUSR |                 // User write permission
+                                +S_IRUSR           // User read permission
     );
     if (fd == -1) {
         printf("Unable to open file\n");
@@ -365,7 +364,8 @@ void leaf_node_split_and_insert(const Cursor *cursor, uint32_t key, const void *
         void *destination = leaf_node_cell(destination_node, index_within_node);
 
         if (i == (int32_t) cursor->cell_num) {
-            serialize_row(value, destination);
+            *(uint32_t *) destination = key;
+            serialize_row(value, destination + LEAF_NODE_KEY_SIZE);
         } else if (i > (int32_t) cursor->cell_num) {
             memcpy(destination, leaf_node_cell(old_node, i - 1), LEAF_NODE_CELL_SIZE);
         } else {
@@ -461,7 +461,7 @@ uint32_t *internal_node_child(void *node, uint32_t child_num) {
 }
 
 uint32_t *internal_node_key(void *node, uint32_t key_num) {
-    return internal_node_cell(node, key_num);
+    return internal_node_cell(node, key_num) + INTERNAL_NODE_CHILD_SIZE;
 }
 
 uint32_t get_node_max_key(void *node) {

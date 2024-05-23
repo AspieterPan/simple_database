@@ -1,6 +1,6 @@
 .vscode/**
 bin/**
-my_program
+simple_db
 .idea
 **/__pycache__
 /py/script.py
@@ -9,3 +9,5 @@ db
 db_dump
 /py/makedb.py
 .nvim
+.DS_Store
+

@@ -1,8 +1,8 @@
 #ifndef SIMPLE_DATABASE_STORE_H
 #define SIMPLE_DATABASE_STORE_H
 
-#include <printf.h>
 #include <assert.h>
+#include <printf.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,7 +14,7 @@
 #define COLUMN_USERNAME_SIZE 32
 #define COLUMN_EMAIL_SIZE 255
 
-#define size_of_attribute(Struct, Attribute) sizeof(((Struct *)0)->Attribute)
+#define size_of_attribute(Struct, Attribute) sizeof(((Struct *) 0)->Attribute)
 
 typedef struct {
     uint32_t id;
@@ -106,7 +106,7 @@ typedef struct {
     Table *table;
     uint32_t page_num;
     uint32_t cell_num;
-    bool end_of_table; // Indicates a position one past the last element
+    bool end_of_table;// Indicates a position one past the last element
 } Cursor;
 
 
@@ -131,7 +131,7 @@ uint32_t *internal_node_cell(void *node, uint32_t cell_num);
 
 uint32_t *internal_node_key(void *node, uint32_t key_num);
 
-uint32_t * internal_node_right_child(void *node);
+uint32_t *internal_node_right_child(void *node);
 
 uint32_t *leaf_node_key(void *node, uint32_t cell_num);
 

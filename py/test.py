@@ -16,7 +16,7 @@ def log_func(f: Callable) -> Callable:
 
 
 def db_context_manage(f: Callable) -> Callable:
-    """ 用于修饰数据库测试函数的装饰器
+    """用于修饰数据库测试函数的装饰器
 
     开始测试前， 清除旧的文件
 
@@ -40,8 +40,12 @@ def run_sql_commands(dbname: str, commands: List[str]) -> List[str]:
     :param dbname:
     :param commands:
     """
-    process = subprocess.Popen(["./my_program", "./db/test.db"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                               text=True)
+    process = subprocess.Popen(
+        ["./simple_db", "./db/test.db"],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        text=True,
+    )
     commands = "\n".join(commands)
     commands += "\n"
     output, _ = process.communicate(input=commands)
@@ -51,7 +55,7 @@ def run_sql_commands(dbname: str, commands: List[str]) -> List[str]:
 @log_func
 @db_context_manage
 def test_database_operations(dbname: str):
-    """ 测试数据库操作 """
+    """测试数据库操作"""
     commands = [
         "insert 1 yan gmail",
         "insert 2 fei qq",
@@ -92,16 +96,18 @@ def test_database_pressure(dbname):
 def test_database_long_string(dbname):
     name = "a" * 32
     email = "e" * 255
-    commands = [f"insert 1 {name} {email}",
-                "select", ".exit"]
+    commands = [f"insert 1 {name} {email}", "select", ".exit"]
 
     output = run_sql_commands(dbname, commands)
     print(output)
 
-    expect = ['db > Executed.',
-              'db > 1 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa '
-              'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
-              'Executed.', 'db >']
+    expect = [
+        "db > Executed.",
+        "db > 1 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa "
+        "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "Executed.",
+        "db >",
+    ]
     assert output == expect
 
 
@@ -110,13 +116,12 @@ def test_database_long_string(dbname):
 def test_database_too_long_string(dbname):
     name = "a" * 33
     email = "e" * 256
-    commands = [f"insert 1 {name} {email}",
-                "select"]
+    commands = [f"insert 1 {name} {email}", "select"]
 
     output = run_sql_commands(dbname, commands)
     print(output)
 
-    expect = ['db > String is too long', 'db > Executed.', 'db > Error reading input']
+    expect = ["db > String is too long", "db > Executed.", "db > Error reading input"]
     assert output == expect
 
 
@@ -125,18 +130,27 @@ def test_database_too_long_string(dbname):
 def test_database_persistence(dbname):
     """测试数据库存储功能"""
     # insert datas and store db
-    commands = ["insert 1 yan yyy",
-                "insert 2 liu lll",
-                "insert 3 tao ttt",
-                "insert 4 fei fff",
-                ".exit"]
+    commands = [
+        "insert 1 yan yyy",
+        "insert 2 liu lll",
+        "insert 3 tao ttt",
+        "insert 4 fei fff",
+        ".exit",
+    ]
     run_sql_commands(dbname, commands)
 
     # reopen the db
     commands = ["select", ".exit"]
     output = run_sql_commands(dbname, commands)
     print(output)
-    expect = ['db > 1 yan yyy', '2 liu lll', '3 tao ttt', '4 fei fff', 'Executed.', 'db >']
+    expect = [
+        "db > 1 yan yyy",
+        "2 liu lll",
+        "3 tao ttt",
+        "4 fei fff",
+        "Executed.",
+        "db >",
+    ]
     assert output == expect
 
 
@@ -159,15 +173,25 @@ def test_print_constants(dbname):
     commands = [".constants", ".exit"]
     output = run_sql_commands(dbname, commands)
     print(output)
-    expect = ['db > Constants:', 'ROW_SIZE: 293', 'COMMON_NODE_HEADER_SIZE: 6', 'LEAF_NODE_HEADER_SIZE: 10',
-              'LEAF_NODE_CELL_SIZE: 297', 'LEAF_NODE_SPACE_FOR_CELLS: 4086', 'LEAF_NODE_MAX_CELLS: 13', 'db >']
+    expect = [
+        "db > Constants:",
+        "ROW_SIZE: 293",
+        "COMMON_NODE_HEADER_SIZE: 6",
+        "LEAF_NODE_HEADER_SIZE: 10",
+        "LEAF_NODE_CELL_SIZE: 297",
+        "LEAF_NODE_SPACE_FOR_CELLS: 4086",
+        "LEAF_NODE_MAX_CELLS: 13",
+        "db >",
+    ]
     assert output == expect
 
 
 @log_func
 @db_context_manage
 def test_print_structure_of_one_node_btree(dbname):
-    commands = [f"insert {i} user#{i} person#{i}@example.com" for i in range(14)]
+    commands = [f"insert {i} user#{i} person#{i}@example.com" for i in range(13, 0, -1)]
+    commands.append(".btree")
+    commands.append("insert 14 user14 person15@example.com")
     commands.append(".btree")
     commands.append("insert 15 user15 person15@example.com")
     commands.append(".exit")

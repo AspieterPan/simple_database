@@ -4,20 +4,21 @@ INC_DIR = inc
 BIN_DIR = bin
 DB_DIR = db
 CFLAGS = -Wall -Wextra -I$(INC_DIR) -std=c17 -g
+EXE = simple_db
 
 SRCS = $(wildcard $(SRC_DIR)/*.c)
 OBJS = $(SRCS:$(SRC_DIR)/%.c=$(BIN_DIR)/%.o)
 
-all: my_program
+all: $(EXE)
 
-run: my_program
-	./my_program ./db/test.db
+run: $(EXE)
+	./$(EXE) ./db/test.db
 
 .PHONY: test
 test:
 	python3 ./py/test.py
 
-my_program: $(OBJS) 
+$(EXE): $(OBJS) 
 	$(CC) $(CFLAGS) -o $@ $^
 
 $(BIN_DIR)/%.o: $(SRC_DIR)/%.c 
@@ -29,4 +30,4 @@ cleandb:
 
 .PHONY: clean
 clean:
-	rm -f $(BIN_DIR)/*.o my_program $(DB_DIR)/*
+	rm -f $(BIN_DIR)/*.o $(EXE) $(DB_DIR)/*
