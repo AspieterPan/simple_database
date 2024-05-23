@@ -75,7 +75,7 @@ PrepareResult prepare_insert(const InputBuffer *input_buffer, Statement *stateme
     char *username = strtok(NULL, " ");
     char *email = strtok(NULL, " ");
 
-    assert (strcmp(keyword, "insert") == 0);
+    assert(strcmp(keyword, "insert") == 0);
 
     // check validity of id
     if (id_string == NULL || username == NULL || email == NULL) {
@@ -123,8 +123,9 @@ ExecuteResult execute_insert(const Statement *statement, Table *table) {
     const uint32_t key_to_insert = row_to_insert->id;
     const Cursor *cursor = table_find(table, key_to_insert);
 
-    if (cursor->cell_num < num_cells) {
-        const uint32_t key_at_index = *leaf_node_key(node, cursor->cell_num);
+    void *insert_node = get_page(table->pager, cursor->page_num);
+    if (cursor->cell_num < *leaf_node_num_cells(insert_node)) {
+        const uint32_t key_at_index = *leaf_node_key(insert_node, cursor->cell_num);
         if (key_at_index == key_to_insert) {
             return EXECUTE_DUPLICATE_KEY;
         }
@@ -161,4 +162,3 @@ ExecuteResult execute_statement(Statement *statement, Table *table) {
             return execute_select(statement, table);
     }
 }
-

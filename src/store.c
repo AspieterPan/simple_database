@@ -31,6 +31,8 @@ void create_new_root(Table *table, uint32_t right_child_page_num);
 
 Cursor *internal_node_find(const Table *table, uint32_t page_num, uint32_t key);
 
+uint32_t *leaf_node_next_leaf(void *node);
+
 /*
  * Row Layout
  */
@@ -65,7 +67,9 @@ const uint8_t COMMON_NODE_HEADER_SIZE =
  */
 const uint32_t LEAF_NODE_NUM_CELLS_SIZE = sizeof(uint32_t);
 const uint32_t LEAF_NODE_NUM_CELLS_OFFSET = COMMON_NODE_HEADER_SIZE;
-const uint32_t LEAF_NODE_HEADER_SIZE = COMMON_NODE_HEADER_SIZE + LEAF_NODE_NUM_CELLS_SIZE;
+const uint32_t LEAF_NODE_NEXT_LEAF_SIZE = sizeof(uint32_t);
+const uint32_t LEAF_NODE_NEXT_LEAF_OFFSET = LEAF_NODE_NUM_CELLS_OFFSET + LEAF_NODE_NUM_CELLS_SIZE;
+const uint32_t LEAF_NODE_HEADER_SIZE = COMMON_NODE_HEADER_SIZE + LEAF_NODE_NUM_CELLS_SIZE + LEAF_NODE_NEXT_LEAF_SIZE;
 
 /*
  * Leaf Node Body Layout
@@ -204,15 +208,11 @@ void db_close(Table *table) {
 }
 
 Cursor *table_start(Table *table) {
-    Cursor *cursor = malloc(sizeof(Cursor));
-    cursor->table = table;
-    cursor->page_num = table->root_page_num;
-    cursor->cell_num = 0;
+    Cursor *cursor = table_find(table, 0);
+    void *node = get_page(table->pager, cursor->page_num);
+    uint32_t num_cells = *leaf_node_num_cells(node);
+    cursor->end_of_table = (num_cells == 0);
 
-    // 令 cursor 指向 root_page 中第一个 cell
-    void *root_node = get_page(table->pager, table->root_page_num);
-    uint32_t num_cells = *leaf_node_num_cells(root_node);
-    cursor->end_of_table = num_cells == 0;
     return cursor;
 }
 
@@ -320,7 +320,13 @@ void cursor_advance(Cursor *cursor) {
     void *node = get_page(cursor->table->pager, page_num);
     cursor->cell_num += 1;
     if (cursor->cell_num >= *leaf_node_num_cells(node)) {
-        cursor->end_of_table = true;
+        uint32_t next_page_num = *leaf_node_next_leaf(node);
+        if (next_page_num == 0) {
+            cursor->end_of_table = true;
+        } else {
+            cursor->page_num = next_page_num;
+            cursor->cell_num = 0;
+        }
     }
 }
 
@@ -377,6 +383,9 @@ void leaf_node_split_and_insert(const Cursor *cursor, uint32_t key, const void *
     void *old_node = get_page(cursor->table->pager, cursor->page_num);
     const uint32_t new_page_num = get_unused_page_num(cursor->table->pager);
     void *new_node = get_page(cursor->table->pager, new_page_num);
+    initialize_leaf_node(new_node);
+    *leaf_node_next_leaf(new_node) = *leaf_node_next_leaf(old_node);
+    *leaf_node_next_leaf(old_node) = new_page_num;
 
     /*
      * All existing keys plus new key should be divided evenly between old (left) and new (right) nodes.
@@ -457,6 +466,7 @@ void initialize_leaf_node(void *node) {
     set_node_type(node, NODE_LEAF);
     set_node_root(node, false);
     *leaf_node_num_cells(node) = 0;
+    *leaf_node_next_leaf(node) = 0;
 }
 
 void initialize_internal_node(void *node) {
@@ -500,4 +510,8 @@ uint32_t get_node_max_key(void *node) {
         case NODE_LEAF:
             return *leaf_node_key(node, *leaf_node_num_cells(node) - 1);
     }
+}
+
+uint32_t *leaf_node_next_leaf(void *node) {
+    return node + LEAF_NODE_NEXT_LEAF_OFFSET;
 }
