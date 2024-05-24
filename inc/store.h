@@ -86,6 +86,7 @@ extern const uint32_t INTERNAL_NODE_HEADER_SIZE;
 extern const uint32_t INTERNAL_NODE_KEY_SIZE;
 extern const uint32_t INTERNAL_NODE_CHILD_SIZE;
 extern const uint32_t INTERNAL_NODE_CELL_SIZE;
+extern const uint32_t INTERNAL_NODE_MAX_CELLS;
 
 typedef enum {
     NODE_LEAF,
@@ -129,7 +130,7 @@ NodeType get_node_type(void *node);
 
 uint32_t *internal_node_num_keys(void *node);
 
-uint32_t *internal_node_cell(void *node, uint32_t cell_num);
+void *internal_node_cell(void *node, uint32_t cell_num);
 
 uint32_t *internal_node_key(void *node, uint32_t key_num);
 
@@ -160,6 +161,8 @@ void deserialize_row(const void *source, Row *destination);
 void leaf_node_insert(const Cursor *cursor, uint32_t key, const Row *value);
 
 void serialize_row(const Row *source, void *destination);
+
+uint32_t *internal_node_child(void *node, uint32_t child_num);
 
 
 #endif

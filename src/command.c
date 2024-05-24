@@ -40,7 +40,7 @@ void print_tree(Pager *pager, uint32_t page_num, uint32_t indentation_level) {
             indent(indentation_level);
             printf("- internal (size %d)\n", num_keys);
             for (uint32_t i = 0; i < num_keys; i++) {
-                child = *internal_node_cell(node, i);
+                child = *internal_node_child(node, i);
                 print_tree(pager, child, indentation_level + 1);
                 indent(indentation_level + 1);
                 printf("- key %d\n", *internal_node_key(node, i));
@@ -116,9 +116,6 @@ PrepareResult prepare_statement(InputBuffer *input_buffer, Statement *statement)
 }
 
 ExecuteResult execute_insert(const Statement *statement, Table *table) {
-    void *node = get_page(table->pager, table->root_page_num);
-    uint32_t num_cells = *leaf_node_num_cells(node);
-
     const Row *row_to_insert = &(statement->row_to_insert);
     const uint32_t key_to_insert = row_to_insert->id;
     const Cursor *cursor = table_find(table, key_to_insert);

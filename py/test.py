@@ -31,6 +31,7 @@ def db_context_manage(f: Callable) -> Callable:
             os.remove(args[0])
         res = f(*args, **kwargs)
         os.remove(args[0])
+        return res
 
     return wrapper
 
@@ -41,15 +42,16 @@ def run_sql_commands(dbname: str, commands: List[str]) -> List[str]:
     :param commands:
     """
     process = subprocess.Popen(
-        ["./simple_db", "./db/test.db"],
+        ["./simple_db", f"{dbname}"],
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         text=True,
     )
-    commands = "\n".join(commands)
-    commands += "\n"
-    output, _ = process.communicate(input=commands)
-    return list(filter(lambda x: x != "", map(str.strip, output.split("\n"))))
+    commands_str: str = "\n".join(commands)
+    commands_str += "\n"
+    output, _ = process.communicate(input=commands_str)
+    # return list(filter(lambda x: x != "", map(str.strip, output.split("\n"))))
+    return list(filter(lambda x: x != "", output.split("\n")))
 
 
 @log_func
@@ -74,7 +76,7 @@ def test_database_operations(dbname: str):
         "db > 1 yan gmail",
         "2 fei qq",
         "Executed.",
-        "db >",
+        "db > ",
     ]
     assert output == expect
 
@@ -106,7 +108,7 @@ def test_database_long_string(dbname):
         "db > 1 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa "
         "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
         "Executed.",
-        "db >",
+        "db > ",
     ]
     assert output == expect
 
@@ -149,7 +151,7 @@ def test_database_persistence(dbname):
         "3 tao ttt",
         "4 fei fff",
         "Executed.",
-        "db >",
+        "db > ",
     ]
     assert output == expect
 
@@ -173,14 +175,16 @@ def test_print_constants(dbname):
     commands = [".constants", ".exit"]
     output = run_sql_commands(dbname, commands)
     print(output)
-    expect = ['db > Constants:',
-              'ROW_SIZE: 293',
-              'COMMON_NODE_HEADER_SIZE: 6',
-              'LEAF_NODE_HEADER_SIZE: 14',
-              'LEAF_NODE_CELL_SIZE: 297',
-              'LEAF_NODE_SPACE_FOR_CELLS: 4082',
-              'LEAF_NODE_MAX_CELLS: 13',
-              'db >']
+    expect = [
+        "db > Constants: ",
+        "ROW_SIZE: 293",
+        "COMMON_NODE_HEADER_SIZE: 6",
+        "LEAF_NODE_HEADER_SIZE: 14",
+        "LEAF_NODE_CELL_SIZE: 297",
+        "LEAF_NODE_SPACE_FOR_CELLS: 4082",
+        "LEAF_NODE_MAX_CELLS: 13",
+        "db > ",
+    ]
     assert output == expect
 
 
@@ -192,43 +196,31 @@ def test_print_structure_of_one_node_btree(dbname):
     commands.append("insert 15 user15 person15@example.com")
     commands.append(".exit")
     output = run_sql_commands(dbname, commands)
-    print(output)
-    expect = ['db > Executed.',
-              'db > Executed.',
-              'db > Executed.',
-              'db > Executed.',
-              'db > Executed.',
-              'db > Executed.',
-              'db > Executed.',
-              'db > Executed.',
-              'db > Executed.',
-              'db > Executed.',
-              'db > Executed.',
-              'db > Executed.',
-              'db > Executed.',
-              'db > Executed.',
-              'db > Tree:',
+    print(output[15:])
+
+    expect = ['db > Tree:',
               '- internal (size 1)',
-              '- leaf (size 7)',
-              '- 1',
-              '- 2',
-              '- 3',
-              '- 4',
-              '- 5',
-              '- 6',
-              '- 7',
-              '- key 7',
-              '- leaf (size 7)',
-              '- 8',
-              '- 9',
-              '- 10',
-              '- 11',
-              '- 12',
-              '- 13',
-              '- 14',
+              '  - leaf (size 7)',
+              '    - 1',
+              '    - 2',
+              '    - 3',
+              '    - 4',
+              '    - 5',
+              '    - 6',
+              '    - 7',
+              '  - key 7',
+              '  - leaf (size 7)',
+              '    - 8',
+              '    - 9',
+              '    - 10',
+              '    - 11',
+              '    - 12',
+              '    - 13',
+              '    - 14',
               'db > Executed.',
-              'db >']
-    assert output == expect
+              'db > ']
+
+    assert output[14:] == expect
 
 
 @log_func
@@ -242,6 +234,91 @@ def test_print_all_rows_in_a_multi_level_tree(dbname):
     print(output)
 
 
+@log_func
+@db_context_manage
+def test_print_4_leaf_node_btree(dbname):
+    commands = list()
+    for i in [
+        18,
+        7,
+        10,
+        29,
+        23,
+        4,
+        14,
+        30,
+        15,
+        26,
+        22,
+        19,
+        2,
+        1,
+        21,
+        11,
+        6,
+        20,
+        5,
+        8,
+        9,
+        3,
+        12,
+        27,
+        17,
+        16,
+        13,
+        24,
+        25,
+        28,
+    ]:
+        commands.append(f"insert {i} user{i} person{i}@example.com")
+    commands.append(".btree")
+    commands.append(".exit")
+    output = run_sql_commands(dbname, commands)
+    print(output[30:])
+
+    expect = ['db > Tree:',
+              '- internal (size 3)',
+              '  - leaf (size 7)',
+              '    - 1',
+              '    - 2',
+              '    - 3',
+              '    - 4',
+              '    - 5',
+              '    - 6',
+              '    - 7',
+              '  - key 7',
+              '  - leaf (size 8)',
+              '    - 8',
+              '    - 9',
+              '    - 10',
+              '    - 11',
+              '    - 12',
+              '    - 13',
+              '    - 14',
+              '    - 15',
+              '  - key 15',
+              '  - leaf (size 7)',
+              '    - 16',
+              '    - 17',
+              '    - 18',
+              '    - 19',
+              '    - 20',
+              '    - 21',
+              '    - 22',
+              '  - key 22',
+              '  - leaf (size 8)',
+              '    - 23',
+              '    - 24',
+              '    - 25',
+              '    - 26',
+              '    - 27',
+              '    - 28',
+              '    - 29',
+              '    - 30',
+              'db > ']
+    assert output[30:] == expect
+
+
 if __name__ == "__main__":
     file_name = "./db/test.db"
     test_database_operations(file_name)
@@ -253,3 +330,4 @@ if __name__ == "__main__":
     test_print_constants(file_name)
     test_print_structure_of_one_node_btree(file_name)
     test_print_all_rows_in_a_multi_level_tree(file_name)
+    test_print_4_leaf_node_btree(file_name)
