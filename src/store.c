@@ -37,7 +37,9 @@ void update_internal_node_key(void *node, uint32_t old_key, uint32_t new_key);
 
 uint32_t internal_node_find_child(void *node, uint32_t key);
 
-void internal_node_insert(Table *table, uint32_t parent_page_num, uint32_t child_page_num);
+void internal_node_insert(const Table *table, uint32_t parent_page_num, uint32_t child_page_num);
+
+void internal_node_split_and_insert(const Table *table, uint32_t parent_page_num, uint32_t child_page_num);
 
 /*
  * Row Layout
@@ -473,6 +475,7 @@ void initialize_internal_node(void *node) {
     set_node_type(node, NODE_INTERNAL);
     set_node_root(node, false);
     *internal_node_num_keys(node) = 0;
+    *internal_node_right_child(node) = INVALIDE_PAGE_NUM;
 }
 
 uint32_t *internal_node_num_keys(void *node) {
@@ -480,7 +483,11 @@ uint32_t *internal_node_num_keys(void *node) {
 }
 
 uint32_t *internal_node_right_child(void *node) {
-    return node + INTERNAL_NODE_RIGHT_CHILD_OFFSET;
+    uint32_t *right_child = (uint32_t *) (node + INTERNAL_NODE_RIGHT_CHILD_OFFSET);
+    if (*right_child == INVALIDE_PAGE_NUM) {
+        printf("Tried to access right child of node, but was invalid page\n");
+    }
+    return right_child;
 }
 
 void *internal_node_cell(void *node, uint32_t cell_num) {
@@ -495,7 +502,11 @@ uint32_t *internal_node_child(void *node, uint32_t child_num) {
     } else if (child_num == num_keys) {
         return internal_node_right_child(node);
     } else {
-        return (uint32_t *) (internal_node_cell(node, child_num) + INTERNAL_NODE_KEY_SIZE);
+        uint32_t *child = (uint32_t *) (internal_node_cell(node, child_num) + INTERNAL_NODE_KEY_SIZE);
+        if (*child == INVALIDE_PAGE_NUM) {
+            printf("Tried to access child %d of node, but was invalid page\n", child_num);
+        }
+        return child;
     }
 }
 
@@ -545,7 +556,7 @@ uint32_t internal_node_find_child(void *node, uint32_t key) {
     return left;
 }
 
-void internal_node_insert(Table *table, uint32_t parent_page_num, uint32_t child_page_num) {
+void internal_node_insert(const Table *table, uint32_t parent_page_num, uint32_t child_page_num) {
     // Add a new child/key pair to parent that corresponds to child
     void *parent = get_page(table->pager, parent_page_num);
     void *child = get_page(table->pager, child_page_num);
@@ -556,12 +567,23 @@ void internal_node_insert(Table *table, uint32_t parent_page_num, uint32_t child
     *internal_node_num_keys(parent) = original_num_keys + 1;
 
     if (original_num_keys >= INTERNAL_NODE_MAX_CELLS) {
-        printf("Need to implement splitting internal node\n");
-        exit(EXIT_FAILURE);
+        internal_node_split_and_insert(table, parent_page_num, child_page_num);
+        return;
     }
 
     uint32_t right_child_page_num = *internal_node_right_child(parent);
+    // An internal node with a right child of INVALID_PAGE_NUM is empty
+    if (right_child_page_num == INVALIDE_PAGE_NUM) {
+        *internal_node_right_child(parent) = child_page_num;
+        return;
+    }
     void *right_child = get_page(table->pager, right_child_page_num);
+    // If we are already at the max number of cells for a node, \
+    // we cannot increment before splitting.
+    // Incrementing without inserting a new key/child pair and immediately calling \
+    // internal_node_split_and_insert has the effect of creating a new key \
+    // at (max_cells + 1) with an uninitialized value
+    *internal_node_num_keys(parent) = original_num_keys + 1;
     uint32_t right_child_max_key = get_node_max_key(right_child);
 
     if (child_max_key > right_child_max_key) {
@@ -579,4 +601,8 @@ void internal_node_insert(Table *table, uint32_t parent_page_num, uint32_t child
         *internal_node_child(parent, index) = child_page_num;
         *internal_node_key(parent, index) = child_max_key;
     }
+}
+
+void internal_node_split_and_insert(const Table *table, uint32_t parent_page_num, uint32_t child_page_num) {
+    // todo
 }

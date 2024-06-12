@@ -16,6 +16,8 @@
 
 #define size_of_attribute(Struct, Attribute) sizeof(((Struct *) 0)->Attribute)
 
+#define INVALIDE_PAGE_NUM UINT32_MAX
+
 typedef struct {
     uint32_t id;
     char username[COLUMN_USERNAME_SIZE + 1];
